@@ -1,22 +1,47 @@
-import { Observable } from 'rxjs';
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map, Observable, tap } from 'rxjs';
+
 import { environment } from '@environments/environment';
 import { Gif } from './../interfaces/gif.interface';
-import type { GiphyItem, GiphyResponse } from '../interfaces/giphy.interfaces';
+import type { GiphyResponse } from '../interfaces/giphy.interfaces';
 import { GifMapper } from '../mapper/gif.mapper';
+
+const GIF_KEY = 'gifs';
+
+const loadFromLocalStorage = () => {
+  const gifsFromLocalStorage = localStorage.getItem(GIF_KEY) ?? '{}'; //Record<string, gifs[]>
+  const gifs = JSON.parse(gifsFromLocalStorage);
+  console.log(gifs);
+  return gifs;
+};
+
+// {
+//   'goku': [gif1,gif2,gif3],
+//   'saitama': [gif1,gif2,gif3],
+//   'dragon ball': [gif1,gif2,gif3],
+// }
+
+// Record<string, Gif[]>
 
 @Injectable({ providedIn: 'root' })
 export class GifService {
-
   private http = inject(HttpClient);
 
   trendingGifs = signal<Gif[]>([]);
-  trendingGifsLoading: any;
-  
+  trendingGifsLoading = signal(true);
+
+  searchHistory = signal<Record<string, Gif[]>>(loadFromLocalStorage());
+  searchHistoryKeys = computed(() => Object.keys(this.searchHistory()));
+
   constructor() {
     this.loadTrendingGifs();
   }
+
+  saveGifsToLocalStorage = effect(() => {
+    const historyString = JSON.stringify(this.searchHistory());
+    localStorage.setItem(GIF_KEY, historyString);
+  });
 
   loadTrendingGifs() {
     this.http
@@ -26,9 +51,11 @@ export class GifService {
           limit: 20,
         },
       })
-      .subscribe((resp: { data: GiphyItem[]; }) => {
+      .subscribe((resp) => {
         const gifs = GifMapper.mapGiphyItemsToGifArray(resp.data);
-        console.log({ search: gifs });
+        this.trendingGifs.set(gifs);
+        this.trendingGifsLoading.set(false);
+        console.log({ gifs });
       });
   }
 
@@ -41,5 +68,9 @@ export class GifService {
           q: query,
         },
       })
-}
-  
+      .pipe(
+        map(({ data }) => data),
+        map((items) => GifMapper.mapGiphyItemsToGifArray(items)),
+      )
+    }
+    }
