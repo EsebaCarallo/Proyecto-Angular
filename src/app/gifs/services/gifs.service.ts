@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@environments/environment';
@@ -27,10 +28,18 @@ export class GifService {
       })
       .subscribe((resp: { data: GiphyItem[]; }) => {
         const gifs = GifMapper.mapGiphyItemsToGifArray(resp.data);
-        this.trendingGifs.set(gifs);
-        this.trendingGifsLoading.set(false);
-        console.log({ gifs });
+        console.log({ search: gifs });
       });
   }
+
+  searchGifs(query: string): Observable<Gif[]> {
+    return this.http
+      .get<GiphyResponse>(`${environment.giphyUrl}/gifs/search`, {
+        params: {
+          api_key: environment.giphyApiKey,
+          limit: 20,
+          q: query,
+        },
+      })
 }
   
