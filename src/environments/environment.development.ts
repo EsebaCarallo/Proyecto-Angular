@@ -5,6 +5,7 @@ export const environment = {
   companySlogan: 'Maneja tus gifs',
 
   // ApiKeys
+  giphyApiKey: 'pWXPO5UJdVSMZGHuRfVsKmdGkm0FZxU9',
 
   // URLS
 };
