@@ -71,6 +71,25 @@ export class GifService {
       .pipe(
         map(({ data }) => data),
         map((items) => GifMapper.mapGiphyItemsToGifArray(items)),
-      )
-    }
-    }
+
+        // Historial
+        tap((items) => {
+          this.searchHistory.update((history) => ({
+            ...history,
+            [query.toLowerCase()]: items,
+          }));
+        })
+      );
+
+    // .subscribe((resp) => {
+    //   const gifs = GifMapper.mapGiphyItemsToGifArray(resp.data);
+
+    //   console.log({ search: gifs });
+    //   return gifs;
+    // });
+  }
+
+  getHistoryGifs(query: string): Gif[] {
+    return this.searchHistory()[query] ?? [];
+  }
+}
